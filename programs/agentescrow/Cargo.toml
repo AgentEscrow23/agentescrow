@@ -1,0 +1,20 @@
+[package]
+name = "agentescrow"
+version = "0.1.0"
+description = "Trustless escrow protocol for AI agent transactions on Solana"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "agentescrow"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-data = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"
