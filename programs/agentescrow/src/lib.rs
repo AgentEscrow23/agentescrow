@@ -304,6 +304,7 @@ pub mod agentescrow {
             &ctx.accounts.token_program.to_account_info(),
             escrow,
             &escrow_key,
+            ctx.bumps.vault,
         )?;
 
         escrow.state = EscrowState::Released;
@@ -335,6 +336,7 @@ pub mod agentescrow {
                     &ctx.accounts.token_program.to_account_info(),
                     escrow,
                     &escrow_key,
+                    ctx.bumps.vault,
                 )?;
                 escrow.state = EscrowState::Expired;
                 emit!(EscrowExpired {
@@ -351,6 +353,7 @@ pub mod agentescrow {
                     &ctx.accounts.token_program.to_account_info(),
                     escrow,
                     &escrow_key,
+                    ctx.bumps.vault,
                 )?;
                 escrow.state = EscrowState::Expired;
                 emit!(EscrowExpired {
@@ -483,6 +486,7 @@ pub mod agentescrow {
                 &ctx.accounts.token_program.to_account_info(),
                 escrow,
                 &escrow_key,
+                ctx.bumps.vault,
             )?;
             escrow.state = EscrowState::Refunded;
         } else {
@@ -493,6 +497,7 @@ pub mod agentescrow {
                 &ctx.accounts.token_program.to_account_info(),
                 escrow,
                 &escrow_key,
+                ctx.bumps.vault,
             )?;
             escrow.state = EscrowState::Released;
         }
@@ -596,6 +601,7 @@ pub fn release_funds_internal<'info>(
     token_program: &AccountInfo<'info>,
     escrow: &mut Escrow,
     escrow_key: &Pubkey,
+    vault_bump: u8,
 ) -> Result<()> {
     let fee = (escrow.amount as u128 * escrow.fee_bps as u128 / 10000) as u64;
     let provider_amount = escrow.amount.checked_sub(fee).unwrap_or(0);
@@ -603,7 +609,7 @@ pub fn release_funds_internal<'info>(
     let seeds = &[
         escrow_key.as_ref(),
         b"vault",
-        &[escrow.bump],
+        &[vault_bump],
     ];
     let signer = &[&seeds[..]];
 
@@ -637,11 +643,12 @@ pub fn refund_funds_internal<'info>(
     token_program: &AccountInfo<'info>,
     escrow: &mut Escrow,
     escrow_key: &Pubkey,
+    vault_bump: u8,
 ) -> Result<()> {
     let seeds = &[
         escrow_key.as_ref(),
         b"vault",
-        &[escrow.bump],
+        &[vault_bump],
     ];
     let signer = &[&seeds[..]];
 
@@ -731,7 +738,12 @@ pub struct ConfirmCompletion<'info> {
     #[account(mut, has_one = payer)]
     pub escrow: Account<'info, Escrow>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [escrow.key().as_ref(), b"vault"],
+        bump,
+        token::authority = vault
+    )]
     pub vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
@@ -748,7 +760,12 @@ pub struct TriggerTimeout<'info> {
     #[account(mut)]
     pub escrow: Account<'info, Escrow>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [escrow.key().as_ref(), b"vault"],
+        bump,
+        token::authority = vault
+    )]
     pub vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
@@ -820,7 +837,12 @@ pub struct ResolveDispute<'info> {
     #[account(mut)]
     pub dispute: Account<'info, Dispute>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [escrow.key().as_ref(), b"vault"],
+        bump,
+        token::authority = vault
+    )]
     pub vault: Account<'info, TokenAccount>,
 
     #[account(mut)]
