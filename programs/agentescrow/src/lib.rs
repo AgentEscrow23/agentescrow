@@ -304,6 +304,7 @@ pub mod agentescrow {
             &ctx.accounts.token_program.to_account_info(),
             escrow,
             &escrow_key,
+            ctx.bumps.vault,
         )?;
 
         escrow.state = EscrowState::Released;
